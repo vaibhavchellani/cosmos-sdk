@@ -1,4 +1,4 @@
-package store
+package gas
 
 import (
 	"io"
@@ -6,7 +6,7 @@ import (
 	sdk "github.com/cosmos/cosmos-sdk/types"
 )
 
-var _ KVStore = &gasKVStore{}
+var _ sdk.KVStore = &gasKVStore{}
 
 // gasKVStore applies gas tracking to an underlying kvstore
 type gasKVStore struct {
@@ -25,12 +25,7 @@ func NewGasKVStore(gasMeter sdk.GasMeter, gasConfig sdk.GasConfig, parent sdk.KV
 	return kvs
 }
 
-// Implements Store.
-func (gi *gasKVStore) GetStoreType() sdk.StoreType {
-	return gi.parent.GetStoreType()
-}
-
-// Implements KVStore.
+// Implements sdk.KVStore.
 func (gi *gasKVStore) Get(key []byte) (value []byte) {
 	gi.gasMeter.ConsumeGas(gi.gasConfig.ReadCostFlat, "ReadFlat")
 	value = gi.parent.Get(key)
@@ -40,7 +35,7 @@ func (gi *gasKVStore) Get(key []byte) (value []byte) {
 	return value
 }
 
-// Implements KVStore.
+// Implements sdk.KVStore.
 func (gi *gasKVStore) Set(key []byte, value []byte) {
 	gi.gasMeter.ConsumeGas(gi.gasConfig.WriteCostFlat, "WriteFlat")
 	// TODO overflow-safe math?
@@ -48,50 +43,35 @@ func (gi *gasKVStore) Set(key []byte, value []byte) {
 	gi.parent.Set(key, value)
 }
 
-// Implements KVStore.
+// Implements sdk.KVStore.
 func (gi *gasKVStore) Has(key []byte) bool {
 	gi.gasMeter.ConsumeGas(gi.gasConfig.HasCost, "Has")
 	return gi.parent.Has(key)
 }
 
-// Implements KVStore.
+// Implements sdk.KVStore.
 func (gi *gasKVStore) Delete(key []byte) {
 	// No gas costs for deletion
 	gi.parent.Delete(key)
 }
 
-// Implements KVStore
-func (gi *gasKVStore) Prefix(prefix []byte) KVStore {
-	// Keep gasstore layer at the top
-	return &gasKVStore{
-		gasMeter:  gi.gasMeter,
-		gasConfig: gi.gasConfig,
-		parent:    prefixStore{gi.parent, prefix},
-	}
-}
-
-// Implements KVStore
-func (gi *gasKVStore) Gas(meter GasMeter, config GasConfig) KVStore {
-	return NewGasKVStore(meter, config, gi)
-}
-
-// Implements KVStore.
+// Implements sdk.KVStore.
 func (gi *gasKVStore) Iterator(start, end []byte) sdk.Iterator {
 	return gi.iterator(start, end, true)
 }
 
-// Implements KVStore.
+// Implements sdk.KVStore.
 func (gi *gasKVStore) ReverseIterator(start, end []byte) sdk.Iterator {
 	return gi.iterator(start, end, false)
 }
 
-// Implements KVStore.
+// Implements sdk.KVStore.
 func (gi *gasKVStore) CacheWrap() sdk.CacheWrap {
 	panic("cannot CacheWrap a GasKVStore")
 }
 
-// CacheWrapWithTrace implements the KVStore interface.
-func (gi *gasKVStore) CacheWrapWithTrace(_ io.Writer, _ TraceContext) CacheWrap {
+// CacheWrapWithTrace implements the sdk.KVStore interface.
+func (gi *gasKVStore) CacheWrapWithTrace(_ io.Writer, _ sdk.TraceContext) sdk.CacheWrap {
 	panic("cannot CacheWrapWithTrace a GasKVStore")
 }
 
