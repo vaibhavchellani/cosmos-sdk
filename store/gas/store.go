@@ -1,19 +1,19 @@
 package gas
 
 import (
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/store/types"
 )
 
-var _ sdk.KVStore = &gasKVStore{}
+var _ types.KVStore = &gasKVStore{}
 
 // gasKVStore applies gas tracking to an underlying kvstore
 type gasKVStore struct {
-	tank   *sdk.GasTank
-	parent sdk.KVStore
+	tank   *types.GasTank
+	parent types.KVStore
 }
 
 // nolint
-func NewStore(tank *sdk.GasTank, parent sdk.KVStore) *gasKVStore {
+func NewStore(tank *types.GasTank, parent types.KVStore) *gasKVStore {
 	kvs := &gasKVStore{
 		tank:   tank,
 		parent: parent,
@@ -21,7 +21,7 @@ func NewStore(tank *sdk.GasTank, parent sdk.KVStore) *gasKVStore {
 	return kvs
 }
 
-// Implements sdk.KVStore.
+// Implements types.KVStore.
 func (gi *gasKVStore) Get(key []byte) (value []byte) {
 	gi.tank.ReadFlat()
 	value = gi.parent.Get(key)
@@ -31,7 +31,7 @@ func (gi *gasKVStore) Get(key []byte) (value []byte) {
 	return value
 }
 
-// Implements sdk.KVStore.
+// Implements types.KVStore.
 func (gi *gasKVStore) Set(key []byte, value []byte) {
 	gi.tank.WriteFlat()
 	// TODO overflow-safe math?
@@ -39,30 +39,30 @@ func (gi *gasKVStore) Set(key []byte, value []byte) {
 	gi.parent.Set(key, value)
 }
 
-// Implements sdk.KVStore.
+// Implements types.KVStore.
 func (gi *gasKVStore) Has(key []byte) bool {
 	gi.tank.HasFlat()
 	return gi.parent.Has(key)
 }
 
-// Implements sdk.KVStore.
+// Implements types.KVStore.
 func (gi *gasKVStore) Delete(key []byte) {
 	// No gas costs for deletion
 	gi.parent.Delete(key)
 }
 
-// Implements sdk.KVStore.
-func (gi *gasKVStore) Iterator(start, end []byte) sdk.Iterator {
+// Implements types.KVStore.
+func (gi *gasKVStore) Iterator(start, end []byte) types.Iterator {
 	return gi.iterator(start, end, true)
 }
 
-// Implements sdk.KVStore.
-func (gi *gasKVStore) ReverseIterator(start, end []byte) sdk.Iterator {
+// Implements types.KVStore.
+func (gi *gasKVStore) ReverseIterator(start, end []byte) types.Iterator {
 	return gi.iterator(start, end, false)
 }
 
-func (gi *gasKVStore) iterator(start, end []byte, ascending bool) sdk.Iterator {
-	var parent sdk.Iterator
+func (gi *gasKVStore) iterator(start, end []byte, ascending bool) types.Iterator {
+	var parent types.Iterator
 	if ascending {
 		parent = gi.parent.Iterator(start, end)
 	} else {
@@ -72,11 +72,11 @@ func (gi *gasKVStore) iterator(start, end []byte, ascending bool) sdk.Iterator {
 }
 
 type gasIterator struct {
-	tank   *sdk.GasTank
-	parent sdk.Iterator
+	tank   *types.GasTank
+	parent types.Iterator
 }
 
-func newGasIterator(tank *sdk.GasTank, parent sdk.Iterator) sdk.Iterator {
+func newGasIterator(tank *types.GasTank, parent types.Iterator) types.Iterator {
 	return &gasIterator{
 		tank:   tank,
 		parent: parent,

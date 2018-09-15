@@ -7,13 +7,13 @@ import (
 	cmn "github.com/tendermint/tendermint/libs/common"
 	dbm "github.com/tendermint/tendermint/libs/db"
 
-	sdk "github.com/cosmos/cosmos-sdk/types"
+	"github.com/cosmos/cosmos-sdk/store/types"
 
 	"github.com/cosmos/cosmos-sdk/store/cache"
 	"github.com/cosmos/cosmos-sdk/store/dbadapter"
 )
 
-func newCacheKVStore() sdk.CacheKVStore {
+func newCacheKVStore() types.CacheKVStore {
 	mem := dbadapter.NewStore(dbm.NewMemDB())
 	return cache.NewStore(mem)
 }
@@ -313,7 +313,7 @@ func randInt(n int) int {
 }
 
 // useful for replaying a error case if we find one
-func doOp(st sdk.CacheKVStore, truth dbm.DB, op int, args ...int) {
+func doOp(st types.CacheKVStore, truth dbm.DB, op int, args ...int) {
 	switch op {
 	case opSet:
 		k := args[0]
@@ -336,7 +336,7 @@ func doOp(st sdk.CacheKVStore, truth dbm.DB, op int, args ...int) {
 	}
 }
 
-func doRandomOp(st sdk.CacheKVStore, truth dbm.DB, maxKey int) {
+func doRandomOp(st types.CacheKVStore, truth dbm.DB, maxKey int) {
 	r := randInt(totalOps)
 	switch r {
 	case opSet:
@@ -363,7 +363,7 @@ func doRandomOp(st sdk.CacheKVStore, truth dbm.DB, maxKey int) {
 //-------------------------------------------------------------------------------------------
 
 // iterate over whole domain
-func assertIterateDomain(t *testing.T, st sdk.KVStore, expectedN int) {
+func assertIterateDomain(t *testing.T, st types.KVStore, expectedN int) {
 	itr := st.Iterator(nil, nil)
 	var i = 0
 	for ; itr.Valid(); itr.Next() {
@@ -375,7 +375,7 @@ func assertIterateDomain(t *testing.T, st sdk.KVStore, expectedN int) {
 	require.Equal(t, expectedN, i)
 }
 
-func assertIterateDomainCheck(t *testing.T, st sdk.KVStore, mem dbm.DB, r []keyRange) {
+func assertIterateDomainCheck(t *testing.T, st types.KVStore, mem dbm.DB, r []keyRange) {
 	// iterate over each and check they match the other
 	itr := st.Iterator(nil, nil)
 	itr2 := mem.Iterator(nil, nil) // ground truth
@@ -405,7 +405,7 @@ func assertIterateDomainCheck(t *testing.T, st sdk.KVStore, mem dbm.DB, r []keyR
 	require.False(t, itr2.Valid())
 }
 
-func assertIterateDomainCompare(t *testing.T, st sdk.KVStore, mem dbm.DB) {
+func assertIterateDomainCompare(t *testing.T, st types.KVStore, mem dbm.DB) {
 	// iterate over each and check they match the other
 	itr := st.Iterator(nil, nil)
 	itr2 := mem.Iterator(nil, nil) // ground truth
@@ -413,7 +413,7 @@ func assertIterateDomainCompare(t *testing.T, st sdk.KVStore, mem dbm.DB) {
 	checkIterators(t, itr2, itr)
 }
 
-func checkIterators(t *testing.T, itr, itr2 sdk.Iterator) {
+func checkIterators(t *testing.T, itr, itr2 types.Iterator) {
 	for ; itr.Valid(); itr.Next() {
 		require.True(t, itr2.Valid())
 		k, v := itr.Key(), itr.Value()
@@ -428,14 +428,14 @@ func checkIterators(t *testing.T, itr, itr2 sdk.Iterator) {
 
 //--------------------------------------------------------
 
-func setRange(st sdk.KVStore, mem dbm.DB, start, end int) {
+func setRange(st types.KVStore, mem dbm.DB, start, end int) {
 	for i := start; i < end; i++ {
 		st.Set(keyFmt(i), valFmt(i))
 		mem.Set(keyFmt(i), valFmt(i))
 	}
 }
 
-func deleteRange(st sdk.KVStore, mem dbm.DB, start, end int) {
+func deleteRange(st types.KVStore, mem dbm.DB, start, end int) {
 	for i := start; i < end; i++ {
 		st.Delete(keyFmt(i))
 		mem.Delete(keyFmt(i))
