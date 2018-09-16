@@ -20,7 +20,7 @@ func (app *BaseApp) SetDB(db dbm.DB) {
 	}
 	app.db = db
 }
-func (app *BaseApp) SetCMS(cms store.CommitMultiStore) {
+func (app *BaseApp) SetCMS(cms *store.CommitMultiStore) {
 	if app.sealed {
 		panic("SetEndBlocker() on sealed BaseApp")
 	}
