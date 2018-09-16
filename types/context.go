@@ -8,6 +8,8 @@ import (
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
+
+	"github.com/cosmos/cosmos-sdk/store/gas"
 )
 
 /*
@@ -68,8 +70,25 @@ func (c Context) Value(key interface{}) interface{} {
 }
 
 // KVStore fetches a KVStore from the MultiStore.
-func (c Context) KVStore(key StoreKey) KVStore {
-	return c.multiStore().GetKVStore(key)
+func (c Context) KVStore(key *KVStoreKey) KVStore {
+	return gas.NewStore(
+		&GasTank{
+			GasMeter: c.GasMeter(),
+			Config:   cachedDefaultKVGasConfig,
+		},
+		c.multiStore().GetKVStore(key),
+	)
+}
+
+// TransientStore fetches a TransientStore from the MultiStore
+func (c Context) TransientStore(key *TransientStoreKey) KVStore {
+	return gas.NewStore(
+		&GasTank{
+			GasMeter: c.GasMeter(),
+			Config:   cachedDefaultTransientGasConfig,
+		},
+		c.multiStore().GetKVStore(key),
+	)
 }
 
 //----------------------------------------
@@ -158,6 +177,9 @@ func (c Context) Logger() log.Logger {
 }
 func (c Context) SigningValidators() []abci.SigningValidator {
 	return c.Value(contextKeySigningValidators).([]abci.SigningValidator)
+}
+func (c Context) GasMeter() GasMeter {
+	return c.Value(contextKeyGasMeter).(GasMeter)
 }
 func (c Context) WithMultiStore(ms MultiStore) Context {
 	return c.withValue(contextKeyMultiStore, ms)

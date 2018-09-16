@@ -68,12 +68,12 @@ type GasConfig struct {
 }
 
 var (
-	cachedDefaultGasConfig   = DefaultGasConfig()
-	cachedTransientGasConfig = TransientGasConfig()
+	cachedDefaultKVGasConfig        = DefaultKVGasConfig()
+	cachedDefaultTransientGasConfig = DefaultTransientGasConfig()
 )
 
 // Default gas config for KVStores
-func DefaultGasConfig() GasConfig {
+func DefaultKVGasConfig() GasConfig {
 	return GasConfig{
 		HasCostFlat:      10,
 		ReadCostFlat:     10,
@@ -87,9 +87,9 @@ func DefaultGasConfig() GasConfig {
 }
 
 // Default gas config for TransientStores
-func TransientGasConfig() GasConfig {
+func DefaultTransientGasConfig() GasConfig {
 	// TODO: define gasconfig for transient stores
-	return DefaultGasConfig()
+	return DefaultKVGasConfig()
 }
 
 type GasTank struct {
