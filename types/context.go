@@ -44,7 +44,6 @@ func NewContext(ms MultiStore, header abci.Header, isCheckTx bool, logger log.Lo
 	c = c.WithTxBytes(nil)
 	c = c.WithLogger(logger)
 	c = c.WithSigningValidators(nil)
-	c = c.WithGasMeter(NewInfiniteGasMeter())
 	return c
 }
 
@@ -160,9 +159,6 @@ func (c Context) Logger() log.Logger {
 func (c Context) SigningValidators() []abci.SigningValidator {
 	return c.Value(contextKeySigningValidators).([]abci.SigningValidator)
 }
-func (c Context) GasMeter() GasMeter {
-	return c.Value(contextKeyGasMeter).(GasMeter)
-}
 func (c Context) WithMultiStore(ms MultiStore) Context {
 	return c.withValue(contextKeyMultiStore, ms)
 }
@@ -174,11 +170,7 @@ func (c Context) WithBlockHeight(height int64) Context {
 	return c.withValue(contextKeyBlockHeight, height)
 }
 func (c Context) WithConsensusParams(params *abci.ConsensusParams) Context {
-	if params == nil {
-		return c
-	}
-	return c.withValue(contextKeyConsensusParams, params).
-		WithGasMeter(NewGasMeter(params.TxSize.MaxGas))
+	return c.withValue(contextKeyConsensusParams, params)
 }
 func (c Context) WithChainID(chainID string) Context {
 	return c.withValue(contextKeyChainID, chainID)
