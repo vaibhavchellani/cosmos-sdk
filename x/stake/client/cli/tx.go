@@ -213,7 +213,6 @@ func GetCmdRedelegate(storeName string, cdc *codec.Codec) *cobra.Command {
 	cmd.AddCommand(
 		client.PostCommands(
 			GetCmdBeginRedelegate(storeName, cdc),
-			GetCmdCompleteRedelegate(cdc),
 		)...)
 
 	return cmd
@@ -275,48 +274,6 @@ func GetCmdBeginRedelegate(storeName string, cdc *codec.Codec) *cobra.Command {
 	return cmd
 }
 
-// GetCmdCompleteRedelegate implements the complete redelegation command.
-func GetCmdCompleteRedelegate(cdc *codec.Codec) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "complete",
-		Short: "complete redelegation",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			txBldr := authtxb.NewTxBuilderFromCLI().WithCodec(cdc)
-			cliCtx := context.NewCLIContext().
-				WithCodec(cdc).
-				WithLogger(os.Stdout).
-				WithAccountDecoder(authcmd.GetAccountDecoder(cdc))
-
-			delAddr, err := cliCtx.GetFromAddress()
-			if err != nil {
-				return err
-			}
-
-			valSrcAddr, err := sdk.ValAddressFromBech32(viper.GetString(FlagAddressValidatorSrc))
-			if err != nil {
-				return err
-			}
-
-			valDstAddr, err := sdk.ValAddressFromBech32(viper.GetString(FlagAddressValidatorDst))
-			if err != nil {
-				return err
-			}
-
-			msg := stake.NewMsgCompleteRedelegate(delAddr, valSrcAddr, valDstAddr)
-
-			if cliCtx.GenerateOnly {
-				return utils.PrintUnsignedStdTx(txBldr, cliCtx, []sdk.Msg{msg})
-			}
-			// build and sign the transaction, then broadcast to Tendermint
-			return utils.CompleteAndBroadcastTxCli(txBldr, cliCtx, []sdk.Msg{msg})
-		},
-	}
-
-	cmd.Flags().AddFlagSet(fsRedelegation)
-
-	return cmd
-}
-
 // GetCmdUnbond implements the unbond validator command.
 func GetCmdUnbond(storeName string, cdc *codec.Codec) *cobra.Command {
 	cmd := &cobra.Command{
@@ -327,7 +284,6 @@ func GetCmdUnbond(storeName string, cdc *codec.Codec) *cobra.Command {
 	cmd.AddCommand(
 		client.PostCommands(
 			GetCmdBeginUnbonding(storeName, cdc),
-			GetCmdCompleteUnbonding(cdc),
 		)...)
 
 	return cmd
@@ -377,43 +333,6 @@ func GetCmdBeginUnbonding(storeName string, cdc *codec.Codec) *cobra.Command {
 	}
 
 	cmd.Flags().AddFlagSet(fsShares)
-	cmd.Flags().AddFlagSet(fsValidator)
-
-	return cmd
-}
-
-// GetCmdCompleteUnbonding implements the complete unbonding validator command.
-func GetCmdCompleteUnbonding(cdc *codec.Codec) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "complete",
-		Short: "complete unbonding",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			txBldr := authtxb.NewTxBuilderFromCLI().WithCodec(cdc)
-			cliCtx := context.NewCLIContext().
-				WithCodec(cdc).
-				WithLogger(os.Stdout).
-				WithAccountDecoder(authcmd.GetAccountDecoder(cdc))
-
-			delAddr, err := cliCtx.GetFromAddress()
-			if err != nil {
-				return err
-			}
-
-			valAddr, err := sdk.ValAddressFromBech32(viper.GetString(FlagAddressValidator))
-			if err != nil {
-				return err
-			}
-
-			msg := stake.NewMsgCompleteUnbonding(delAddr, valAddr)
-
-			if cliCtx.GenerateOnly {
-				return utils.PrintUnsignedStdTx(txBldr, cliCtx, []sdk.Msg{msg})
-			}
-			// build and sign the transaction, then broadcast to Tendermint
-			return utils.CompleteAndBroadcastTxCli(txBldr, cliCtx, []sdk.Msg{msg})
-		},
-	}
-
 	cmd.Flags().AddFlagSet(fsValidator)
 
 	return cmd
